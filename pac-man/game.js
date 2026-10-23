@@ -105,7 +105,7 @@ const CONFIG = Object.freeze({
     GAME_OVER_DURATION: 3000,
 
     // Colors
-    COLOR_MAZE: '#2121FF',
+    COLOR_MAZE: '#C4B5E8',
     COLOR_DOT: '#FFB897',
     COLOR_POWER_PELLET: '#FFB897',
     COLOR_PACMAN: '#FFFF00',
@@ -1721,8 +1721,8 @@ class Renderer {
         const COLLAPSE_FRAMES = 30;
 
         if (frame < FREEZE_FRAMES) {
-            // Phase 1: Freeze (show closed Pac-Man)
-            this.drawSprite(SPRITES.PACMAN_CLOSED, state.pacman.x - 8, state.pacman.y - 8, CONFIG.COLOR_PACMAN);
+            // Phase 1: Freeze the player character.
+            this.drawPikachu(state.pacman.x, state.pacman.y);
         } else if (frame < FREEZE_FRAMES + SPIN_FRAMES) {
             // Phase 2: Spin (mouth opens in all 4 directions sequentially)
             const spinFrame = frame - FREEZE_FRAMES;
@@ -1734,9 +1734,7 @@ class Renderer {
             // Rotate based on direction (0=right, 1=down, 2=left, 3=up)
             this.ctx.rotate(direction * Math.PI / 2);
 
-            // Alternate between open and closed mouth
-            const sprite = (Math.floor(spinFrame / 2.5) % 2 === 0) ? SPRITES.PACMAN_OPEN : SPRITES.PACMAN_CLOSED;
-            this.drawSprite(sprite, -8, -8, CONFIG.COLOR_PACMAN);
+            this.drawPikachu(0, 0, Math.floor(spinFrame / 2.5) % 2 === 0);
 
             this.ctx.restore();
         } else if (frame < FREEZE_FRAMES + SPIN_FRAMES + COLLAPSE_FRAMES) {
@@ -1749,7 +1747,7 @@ class Renderer {
             this.ctx.rotate(Math.PI / 2);  // Face down during collapse
             this.ctx.scale(scale, scale);
 
-            this.drawSprite(SPRITES.PACMAN_OPEN, -8, -8, CONFIG.COLOR_PACMAN);
+            this.drawPikachu(0, 0, true);
             this.ctx.restore();
         }
 
@@ -1811,30 +1809,47 @@ class Renderer {
     drawPacman(pacman) {
         if (!pacman.alive) return;
 
-        this.ctx.save();
-        this.ctx.translate(pacman.x, pacman.y);
+        this.drawPikachu(pacman.x, pacman.y, pacman.mouthOpen, pacman.currentDir);
+    }
 
-        if (pacman.currentDir.dx > 0) {
-            this.ctx.rotate(0);
-        } else if (pacman.currentDir.dx < 0) {
-            this.ctx.rotate(Math.PI);
-        } else if (pacman.currentDir.dy < 0) {
-            this.ctx.rotate(-Math.PI / 2);
-        } else if (pacman.currentDir.dy > 0) {
-            this.ctx.rotate(Math.PI / 2);
+    drawPikachu(x, y, mouthOpen = false, direction = { dx: 0, dy: 0 }) {
+        // Original pixel art: black-tipped ears, red cheeks and lightning tail.
+        // Keep the face upright; the eyes look in the direction of travel.
+        const pixels = [
+            '.KK.....KK.....',
+            '.KY.....YK.....',
+            '.YY.....YY.....',
+            '..YY...YY......',
+            '..YYYYYYY......',
+            '.YYYYYYYYY.....',
+            '.YYYYYYYYY...YY',
+            '.RYYYYYYYR..YYY',
+            '..YYYYYYY....YY',
+            '...YYYYY...YYY.',
+            '..YYYYYYY..YY..',
+            '..YYYYYYYBB....',
+            '...YY.YY.......'
+        ];
+        const colors = { K: '#292230', Y: '#FFDC45', R: '#F45B63', B: '#A56935' };
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.translate(Math.round(x), Math.round(y));
+        for (let row = 0; row < pixels.length; row++) {
+            for (let col = 0; col < pixels[row].length; col++) {
+                const color = colors[pixels[row][col]];
+                if (!color) continue;
+                ctx.fillStyle = color;
+                ctx.fillRect(col - 7, row - 7, 1, 1);
+            }
         }
-
-        this.ctx.fillStyle = CONFIG.COLOR_PACMAN;
-        this.ctx.beginPath();
-        if (pacman.mouthOpen) {
-            this.ctx.arc(0, 0, CONFIG.PACMAN_RADIUS, CONFIG.PACMAN_MOUTH_ANGLE, -CONFIG.PACMAN_MOUTH_ANGLE);
-            this.ctx.lineTo(0, 0);
-        } else {
-            this.ctx.arc(0, 0, CONFIG.PACMAN_RADIUS, 0, Math.PI * 2);
-        }
-        this.ctx.fill();
-
-        this.ctx.restore();
+        ctx.fillStyle = colors.K;
+        const eyeX = direction.dx * 0.4;
+        const eyeY = direction.dy * 0.4;
+        ctx.fillRect(-4 + eyeX, -1 + eyeY, 1.5, 1.5);
+        ctx.fillRect(1 + eyeX, -1 + eyeY, 1.5, 1.5);
+        ctx.fillRect(-1, 1, 1, 1);
+        ctx.fillRect(-1.5, 3, 2, mouthOpen ? 2 : 1);
+        ctx.restore();
     }
 
     drawGhost(ghost) {
@@ -1890,10 +1905,7 @@ class Renderer {
         // Bottom-left: Lives remaining (in bottom margin area)
         const livesY = CONFIG.LOGICAL_HEIGHT - 8;
         for (let i = 0; i < state.lives - 1; i++) {  // Show remaining lives (not including current)
-            this.ctx.fillStyle = CONFIG.COLOR_PACMAN;
-            this.ctx.beginPath();
-            this.ctx.arc(10 + i * 16, livesY, 5, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.drawPikachu(10 + i * 16, livesY);
         }
 
         // Bottom-right: Collected fruits (in bottom margin area)
