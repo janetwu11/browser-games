@@ -7,7 +7,7 @@
 html, body {
     width: 100%;
     height: 100%;
-    background: #000;
+    background: #f8dce5;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -16,8 +16,30 @@ html, body {
 
 canvas {
     display: block;
-    max-width: 100vw;
-    max-height: 100vh;
+    max-width: calc(100vw - 96px);
+    max-height: 100dvh;
     aspect-ratio: 7 / 9;
-    background: #000;
+    background: #f8dce5;
+}
+
+/* Decorative plants stay outside the canvas and never intercept game input. */
+.plants {
+    position: fixed;
+    top: 10%;
+    bottom: 10%;
+    width: max(48px, calc((100vw - 78vh) / 2));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    pointer-events: none;
+    user-select: none;
+    font-size: clamp(28px, 5vw, 64px);
+}
+
+.plants-left { left: 0; }
+.plants-right { right: 0; }
+
+.plants span {
+    filter: drop-shadow(0 5px 3px #b96c8b33);
 }

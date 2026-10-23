@@ -106,8 +106,8 @@ const CONFIG = Object.freeze({
 
     // Colors
     COLOR_MAZE: '#2121FF',
-    COLOR_DOT: '#FFB897',
-    COLOR_POWER_PELLET: '#FFB897',
+    COLOR_DOT: '#99506B',
+    COLOR_POWER_PELLET: '#99506B',
     COLOR_PACMAN: '#FFFF00',
     COLOR_BLINKY: '#FF0000',
     COLOR_PINKY: '#FFB8FF',
@@ -115,8 +115,8 @@ const CONFIG = Object.freeze({
     COLOR_CLYDE: '#FFB852',
     COLOR_FRIGHTENED: '#2121DE',
     COLOR_FRIGHTENED_FLASH: '#FFFFFF',
-    COLOR_TEXT: '#FFFFFF',
-    COLOR_BG: '#000000',
+    COLOR_TEXT: '#54283E',
+    COLOR_BG: '#F8DCE5',
 });
 
 // ============================================================================
