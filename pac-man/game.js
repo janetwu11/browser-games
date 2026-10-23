@@ -22,7 +22,7 @@ const CONFIG = Object.freeze({
     // Pac-Man
     BASE_SPEED: 1.25,  // Authentic: 75 pixels/sec at 60fps = 1.25 px/frame (100%)
     PACMAN_START_COL: 14,
-    PACMAN_START_ROW: 26,
+    PACMAN_START_ROW: 29,  // Open bottom corridor, away from the ghost spawn tiles
     PACMAN_RADIUS: 6,
     PACMAN_MOUTH_ANGLE: 0.25,
     PACMAN_ANIM_INTERVAL: 8,
