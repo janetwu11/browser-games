@@ -22,7 +22,7 @@ const CONFIG = Object.freeze({
     // Pac-Man
     BASE_SPEED: 1.25,  // Authentic: 75 pixels/sec at 60fps = 1.25 px/frame (100%)
     PACMAN_START_COL: 14,
-    PACMAN_START_ROW: 26,
+    PACMAN_START_ROW: 29,  // Open bottom corridor, away from the ghost spawn tiles
     PACMAN_RADIUS: 6,
     PACMAN_MOUTH_ANGLE: 0.25,
     PACMAN_ANIM_INTERVAL: 8,
@@ -1721,8 +1721,8 @@ class Renderer {
         const COLLAPSE_FRAMES = 30;
 
         if (frame < FREEZE_FRAMES) {
-            // Phase 1: Freeze (show closed Pac-Man)
-            this.drawSprite(SPRITES.PACMAN_CLOSED, state.pacman.x - 8, state.pacman.y - 8, CONFIG.COLOR_PACMAN);
+            // Phase 1: Freeze (show Psyduck with a closed bill)
+            this.drawPsyduck(state.pacman.x, state.pacman.y, false);
         } else if (frame < FREEZE_FRAMES + SPIN_FRAMES) {
             // Phase 2: Spin (mouth opens in all 4 directions sequentially)
             const spinFrame = frame - FREEZE_FRAMES;
@@ -1735,8 +1735,7 @@ class Renderer {
             this.ctx.rotate(direction * Math.PI / 2);
 
             // Alternate between open and closed mouth
-            const sprite = (Math.floor(spinFrame / 2.5) % 2 === 0) ? SPRITES.PACMAN_OPEN : SPRITES.PACMAN_CLOSED;
-            this.drawSprite(sprite, -8, -8, CONFIG.COLOR_PACMAN);
+            this.drawPsyduck(0, 0, Math.floor(spinFrame / 2.5) % 2 === 0);
 
             this.ctx.restore();
         } else if (frame < FREEZE_FRAMES + SPIN_FRAMES + COLLAPSE_FRAMES) {
@@ -1749,7 +1748,7 @@ class Renderer {
             this.ctx.rotate(Math.PI / 2);  // Face down during collapse
             this.ctx.scale(scale, scale);
 
-            this.drawSprite(SPRITES.PACMAN_OPEN, -8, -8, CONFIG.COLOR_PACMAN);
+            this.drawPsyduck(0, 0, true);
             this.ctx.restore();
         }
 
@@ -1767,16 +1766,10 @@ class Renderer {
     }
 
     drawMaze(mazeWalls) {
-        this.ctx.fillStyle = CONFIG.COLOR_MAZE;
         for (let col = 0; col < CONFIG.MAZE_COLS; col++) {
             for (let row = 0; row < CONFIG.MAZE_ROWS; row++) {
                 if (mazeWalls[col] && mazeWalls[col][row]) {
-                    this.ctx.fillRect(
-                        col * CONFIG.TILE_SIZE,
-                        row * CONFIG.TILE_SIZE,
-                        CONFIG.TILE_SIZE,
-                        CONFIG.TILE_SIZE
-                    );
+                    this.drawDuckling(col * CONFIG.TILE_SIZE, row * CONFIG.TILE_SIZE);
                 }
             }
         }
@@ -1824,17 +1817,59 @@ class Renderer {
             this.ctx.rotate(Math.PI / 2);
         }
 
-        this.ctx.fillStyle = CONFIG.COLOR_PACMAN;
-        this.ctx.beginPath();
-        if (pacman.mouthOpen) {
-            this.ctx.arc(0, 0, CONFIG.PACMAN_RADIUS, CONFIG.PACMAN_MOUTH_ANGLE, -CONFIG.PACMAN_MOUTH_ANGLE);
-            this.ctx.lineTo(0, 0);
-        } else {
-            this.ctx.arc(0, 0, CONFIG.PACMAN_RADIUS, 0, Math.PI * 2);
-        }
-        this.ctx.fill();
+        this.drawPsyduck(0, 0, pacman.mouthOpen);
 
         this.ctx.restore();
+    }
+
+    drawDuckPixels(rows, palette, x, y, scale = 1) {
+        for (let row = 0; row < rows.length; row++) {
+            for (let col = 0; col < rows[row].length; col++) {
+                const color = palette[rows[row][col]];
+                if (!color) continue;
+                this.ctx.fillStyle = color;
+                this.ctx.fillRect(x + col * scale, y + row * scale, scale, scale);
+            }
+        }
+    }
+
+    drawDuckling(x, y) {
+        // One tiny duck per solid tile; the collision grid remains unchanged.
+        this.drawDuckPixels([
+            '...yy...',
+            '..yyyy..',
+            '..yykyoo',
+            '..yyyy..',
+            'y.yyyy..',
+            'yyyyyy..',
+            '.yssy...',
+            '..oo....'
+        ], { y: '#ffe778', s: '#efbb42', o: '#ff983d', k: '#30251c' },
+        x, y, CONFIG.TILE_SIZE / 8);
+    }
+
+    drawPsyduck(x, y, mouthOpen) {
+        // Original pixel art: three hairs, vacant eyes, broad bill and webbed feet.
+        // Facing right matches the existing direction/rotation convention.
+        this.drawDuckPixels([
+            '.....k.k.k......',
+            '......kkk.......',
+            '....yyyyyyy.....',
+            '...yyyyyyyyy....',
+            '..yyyywwywwyy...',
+            '..yyyywkywkyy...',
+            '..yyyybbbbbbbb..',
+            '...yybbbbbbbbbb.',
+            mouthOpen ? '...yybbbkkkkbbb.' : '...yybbbbbbbbbb.',
+            '....yybbbbbbbb..',
+            '..yyyyyyyyyy....',
+            '.yyyyysyyyyyy...',
+            '..yyyysyyyyy....',
+            '...yyyyyyyy.....',
+            '...bbb..bbb.....',
+            '..bbbb..bbbb....'
+        ], { y: '#f5cf43', s: '#dfa52f', b: '#f5dfa0', w: '#fffef3', k: '#342d29' },
+        x - 8, y - 8);
     }
 
     drawGhost(ghost) {
@@ -1890,10 +1925,7 @@ class Renderer {
         // Bottom-left: Lives remaining (in bottom margin area)
         const livesY = CONFIG.LOGICAL_HEIGHT - 8;
         for (let i = 0; i < state.lives - 1; i++) {  // Show remaining lives (not including current)
-            this.ctx.fillStyle = CONFIG.COLOR_PACMAN;
-            this.ctx.beginPath();
-            this.ctx.arc(10 + i * 16, livesY, 5, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.drawPsyduck(10 + i * 18, livesY, false);
         }
 
         // Bottom-right: Collected fruits (in bottom margin area)
