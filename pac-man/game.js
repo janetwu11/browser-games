@@ -105,7 +105,7 @@ const CONFIG = Object.freeze({
     GAME_OVER_DURATION: 3000,
 
     // Colors
-    COLOR_MAZE: '#2121FF',
+    COLOR_MAZE: '#FF5263',
     COLOR_DOT: '#FFB897',
     COLOR_POWER_PELLET: '#FFB897',
     COLOR_PACMAN: '#FFFF00',
@@ -1721,8 +1721,8 @@ class Renderer {
         const COLLAPSE_FRAMES = 30;
 
         if (frame < FREEZE_FRAMES) {
-            // Phase 1: Freeze (show closed Pac-Man)
-            this.drawSprite(SPRITES.PACMAN_CLOSED, state.pacman.x - 8, state.pacman.y - 8, CONFIG.COLOR_PACMAN);
+            // Phase 1: Freeze.
+            this.drawSquirtle(state.pacman.x, state.pacman.y);
         } else if (frame < FREEZE_FRAMES + SPIN_FRAMES) {
             // Phase 2: Spin (mouth opens in all 4 directions sequentially)
             const spinFrame = frame - FREEZE_FRAMES;
@@ -1735,8 +1735,7 @@ class Renderer {
             this.ctx.rotate(direction * Math.PI / 2);
 
             // Alternate between open and closed mouth
-            const sprite = (Math.floor(spinFrame / 2.5) % 2 === 0) ? SPRITES.PACMAN_OPEN : SPRITES.PACMAN_CLOSED;
-            this.drawSprite(sprite, -8, -8, CONFIG.COLOR_PACMAN);
+            this.drawSquirtle(0, 0, Math.floor(spinFrame / 2.5) % 2 === 0);
 
             this.ctx.restore();
         } else if (frame < FREEZE_FRAMES + SPIN_FRAMES + COLLAPSE_FRAMES) {
@@ -1749,7 +1748,7 @@ class Renderer {
             this.ctx.rotate(Math.PI / 2);  // Face down during collapse
             this.ctx.scale(scale, scale);
 
-            this.drawSprite(SPRITES.PACMAN_OPEN, -8, -8, CONFIG.COLOR_PACMAN);
+            this.drawSquirtle(0, 0, true);
             this.ctx.restore();
         }
 
@@ -1767,7 +1766,16 @@ class Renderer {
     }
 
     drawMaze(mazeWalls) {
-        this.ctx.fillStyle = CONFIG.COLOR_MAZE;
+        // A static diagonal rainbow keeps the maze colorful without flashing.
+        const rainbow = this.ctx.createLinearGradient(
+            0, 0, CONFIG.MAZE_COLS * CONFIG.TILE_SIZE,
+            CONFIG.MAZE_ROWS * CONFIG.TILE_SIZE
+        );
+        ['#FF5263', '#FF9D43', '#FFE66D', '#62DC88',
+            '#53CEEB', '#8187FF', '#D87AEB'].forEach((color, i) => {
+            rainbow.addColorStop(i / 6, color);
+        });
+        this.ctx.fillStyle = rainbow;
         for (let col = 0; col < CONFIG.MAZE_COLS; col++) {
             for (let row = 0; row < CONFIG.MAZE_ROWS; row++) {
                 if (mazeWalls[col] && mazeWalls[col][row]) {
@@ -1824,17 +1832,46 @@ class Renderer {
             this.ctx.rotate(Math.PI / 2);
         }
 
-        this.ctx.fillStyle = CONFIG.COLOR_PACMAN;
-        this.ctx.beginPath();
-        if (pacman.mouthOpen) {
-            this.ctx.arc(0, 0, CONFIG.PACMAN_RADIUS, CONFIG.PACMAN_MOUTH_ANGLE, -CONFIG.PACMAN_MOUTH_ANGLE);
-            this.ctx.lineTo(0, 0);
-        } else {
-            this.ctx.arc(0, 0, CONFIG.PACMAN_RADIUS, 0, Math.PI * 2);
-        }
-        this.ctx.fill();
+        this.drawSquirtle(0, 0, pacman.mouthOpen);
 
         this.ctx.restore();
+    }
+
+    drawSquirtle(x, y, mouthOpen = false) {
+        // Original 16px sprite: blue head/limbs, cream belly, brown shell,
+        // curled tail and a bright eye. Faces right before caller rotation.
+        const pixels = [
+            '................',
+            '.........KKKK...',
+            '........KBBBBK..',
+            '....KKKKBBBWKBK.',
+            '...KTTTKBBBBKBK.',
+            '..KTLLTTKBBBBBBK',
+            '..KTLTLTKBBBBBBK',
+            'KKKTTTTTKCBBBBK.',
+            'KBKTLTLTKCCKKK..',
+            'KBKTTTTTKCCBK...',
+            'KBBKTTTKCCCBK...',
+            '.KBBKKKCCCCK....',
+            '..KKKBBKCCK.....',
+            '....KBBKKBBK....',
+            '....KKK.KKK.....',
+            '................'
+        ];
+        const palette = {
+            K: '#17354B', B: '#63C9ED', T: '#A86A3D',
+            L: '#E4B477', C: '#FFE3A0', W: '#FFFFFF'
+        };
+        for (let row = 0; row < pixels.length; row++) {
+            for (let col = 0; col < pixels[row].length; col++) {
+                const color = palette[pixels[row][col]];
+                if (!color) continue;
+                this.ctx.fillStyle = color;
+                this.ctx.fillRect(x - 8 + col, y - 8 + row, 1, 1);
+            }
+        }
+        this.ctx.fillStyle = '#17354B';
+        this.ctx.fillRect(x + 4, y - 1, 3, mouthOpen ? 2 : 1);
     }
 
     drawGhost(ghost) {
@@ -1890,10 +1927,7 @@ class Renderer {
         // Bottom-left: Lives remaining (in bottom margin area)
         const livesY = CONFIG.LOGICAL_HEIGHT - 8;
         for (let i = 0; i < state.lives - 1; i++) {  // Show remaining lives (not including current)
-            this.ctx.fillStyle = CONFIG.COLOR_PACMAN;
-            this.ctx.beginPath();
-            this.ctx.arc(10 + i * 16, livesY, 5, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.drawSquirtle(10 + i * 16, livesY);
         }
 
         // Bottom-right: Collected fruits (in bottom margin area)
