@@ -1721,8 +1721,8 @@ class Renderer {
         const COLLAPSE_FRAMES = 30;
 
         if (frame < FREEZE_FRAMES) {
-            // Phase 1: Freeze (show Psyduck with a closed bill)
-            this.drawPsyduck(state.pacman.x, state.pacman.y, false);
+            // Phase 1: Freeze (show Squirtle with a closed mouth)
+            this.drawSquirtle(state.pacman.x, state.pacman.y, false);
         } else if (frame < FREEZE_FRAMES + SPIN_FRAMES) {
             // Phase 2: Spin (mouth opens in all 4 directions sequentially)
             const spinFrame = frame - FREEZE_FRAMES;
@@ -1735,7 +1735,7 @@ class Renderer {
             this.ctx.rotate(direction * Math.PI / 2);
 
             // Alternate between open and closed mouth
-            this.drawPsyduck(0, 0, Math.floor(spinFrame / 2.5) % 2 === 0);
+            this.drawSquirtle(0, 0, Math.floor(spinFrame / 2.5) % 2 === 0);
 
             this.ctx.restore();
         } else if (frame < FREEZE_FRAMES + SPIN_FRAMES + COLLAPSE_FRAMES) {
@@ -1748,7 +1748,7 @@ class Renderer {
             this.ctx.rotate(Math.PI / 2);  // Face down during collapse
             this.ctx.scale(scale, scale);
 
-            this.drawPsyduck(0, 0, true);
+            this.drawSquirtle(0, 0, true);
             this.ctx.restore();
         }
 
@@ -1817,7 +1817,7 @@ class Renderer {
             this.ctx.rotate(Math.PI / 2);
         }
 
-        this.drawPsyduck(0, 0, pacman.mouthOpen);
+        this.drawSquirtle(0, 0, pacman.mouthOpen);
 
         this.ctx.restore();
     }
@@ -1848,28 +1848,33 @@ class Renderer {
         x, y, CONFIG.TILE_SIZE / 8);
     }
 
-    drawPsyduck(x, y, mouthOpen) {
-        // Original pixel art: three hairs, vacant eyes, broad bill and webbed feet.
-        // Facing right matches the existing direction/rotation convention.
+    drawSquirtle(x, y, mouthOpen) {
+        // Blue head/limbs, cream belly, brown shell, curled tail and bright eye.
+        // Reuse the Squirtle artwork from the rainbow-maze variant.
         this.drawDuckPixels([
-            '.....k.k.k......',
-            '......kkk.......',
-            '....yyyyyyy.....',
-            '...yyyyyyyyy....',
-            '..yyyywwywwyy...',
-            '..yyyywkywkyy...',
-            '..yyyybbbbbbbb..',
-            '...yybbbbbbbbbb.',
-            mouthOpen ? '...yybbbkkkkbbb.' : '...yybbbbbbbbbb.',
-            '....yybbbbbbbb..',
-            '..yyyyyyyyyy....',
-            '.yyyyysyyyyyy...',
-            '..yyyysyyyyy....',
-            '...yyyyyyyy.....',
-            '...bbb..bbb.....',
-            '..bbbb..bbbb....'
-        ], { y: '#f5cf43', s: '#dfa52f', b: '#f5dfa0', w: '#fffef3', k: '#342d29' },
+            '................',
+            '.........KKKK...',
+            '........KBBBBK..',
+            '....KKKKBBBWKBK.',
+            '...KTTTKBBBBKBK.',
+            '..KTLLTTKBBBBBBK',
+            '..KTLTLTKBBBBBBK',
+            'KKKTTTTTKCBBBBK.',
+            'KBKTLTLTKCCKKK..',
+            'KBKTTTTTKCCBK...',
+            'KBBKTTTKCCCBK...',
+            '.KBBKKKCCCCK....',
+            '..KKKBBKCCK.....',
+            '....KBBKKBBK....',
+            '....KKK.KKK.....',
+            '................'
+        ], {
+            K: '#17354B', B: '#63C9ED', T: '#A86A3D',
+            L: '#E4B477', C: '#FFE3A0', W: '#FFFFFF'
+        },
         x - 8, y - 8);
+        this.ctx.fillStyle = '#17354B';
+        this.ctx.fillRect(x + 4, y - 1, 3, mouthOpen ? 2 : 1);
     }
 
     drawGhost(ghost) {
@@ -1925,7 +1930,7 @@ class Renderer {
         // Bottom-left: Lives remaining (in bottom margin area)
         const livesY = CONFIG.LOGICAL_HEIGHT - 8;
         for (let i = 0; i < state.lives - 1; i++) {  // Show remaining lives (not including current)
-            this.drawPsyduck(10 + i * 18, livesY, false);
+            this.drawSquirtle(10 + i * 18, livesY, false);
         }
 
         // Bottom-right: Collected fruits (in bottom margin area)
